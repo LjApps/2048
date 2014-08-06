@@ -613,11 +613,8 @@ hr {
     margin-top: 2px; }
 
   .game-container {
-<<<<<<< HEAD
     margin-top: 17px;
-=======
     /*margin-top: 40px;*/
->>>>>>> pr/219
     position: relative;
     padding: 10px;
     cursor: default;
@@ -631,12 +628,8 @@ hr {
     background: #bbada0;
     border-radius: 6px;
     width: 280px;
-<<<<<<< HEAD
-    height: 280px;
-=======
     height: 350px;
     -ms-touch-action: none;
->>>>>>> pr/219
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box; }
@@ -800,6 +793,9 @@ hr {
     -webkit-transform: translate(202px, 269px);
     -moz-transform: translate(202px, 269px);
     transform: translate(202px, 269px); }
+
+  .game-container {
+    margin-top: 20px; }
 
   .tile .tile-inner {
     font-size: 35px; }
