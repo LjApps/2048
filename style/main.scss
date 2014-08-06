@@ -2,6 +2,7 @@
 @import "fonts/clear-sans.css";
 
 $field-width: 500px;
+$field-height: 625px;
 $grid-spacing: 15px;
 $grid-row-cells: 4;
 $tile-size: ($field-width - $grid-spacing * ($grid-row-cells + 1)) / $grid-row-cells;
@@ -38,6 +39,10 @@ body {
 .heading {
   @include clearfix;
 }
+.heading:after {
+  content: "";
+  display: block;
+  clear: both;
 
 h1.title {
   font-size: 80px;
@@ -64,7 +69,7 @@ h1.title {
   text-align: right;
 }
 
-.score-container, .best-container {
+.score-container, .best-container, .next-tile-container {
   $height: 25px;
 
   position: relative;
@@ -114,6 +119,10 @@ h1.title {
   content: "Best"
 }
 
+.next-tile-container:after {
+  content: "Next Tile"
+}
+
 p {
   margin-top: 0;
   margin-bottom: 10px;
@@ -142,6 +151,7 @@ hr {
 
 .container {
   width: $field-width;
+  height: $field-height;
   margin: 0 auto;
 }
 
@@ -170,7 +180,7 @@ hr {
 // Game field mixin used to render CSS at different width
 @mixin game-field {
   .game-container {
-    margin-top: $game-container-margin-top;
+    margin-top: 40px;
     position: relative;
     padding: $grid-spacing;
 
@@ -188,7 +198,8 @@ hr {
     background: $game-container-background;
     border-radius: $tile-border-radius * 2;
     width: $field-width;
-    height: $field-width;
+    height: $field-height;
+    -ms-touch-action: none;
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
@@ -229,6 +240,12 @@ hr {
 	&.keep-playing-button {
 	  display: none;
 	}
+      }
+
+      .score-sharing {
+        display: inline-block;
+        vertical-align: middle;
+        margin-left: 10px;
       }
 
       @include animation(fade-in 800ms ease $transition-speed * 12);
@@ -283,7 +300,11 @@ hr {
     }
   }
 
-  .tile-container {
+.invi {
+  background: #bbada0;
+}
+
+ .tile-container {
     position: absolute;
     z-index: 2;
   }
@@ -472,6 +493,16 @@ hr {
   margin-top: 50px;
 }
 
+.sharing {
+  margin-top: 20px;
+  text-align: center;
+
+  > iframe, > span, > form {
+    display: inline-block;
+    vertical-align: middle;
+  }
+}
+
 @include smaller($mobile-threshold) {
   // Redefine variables for smaller screens
   $field-width: 280px;
@@ -500,7 +531,7 @@ hr {
     margin: 0 auto;
   }
 
-  .score-container, .best-container {
+  .score-container, .best-container, .next-tile-container {
     margin-top: 0;
     padding: 15px 10px;
     min-width: 40px;
@@ -529,6 +560,9 @@ hr {
   // Render the game field at the right width
   @include game-field;
 
+  .game-container {
+    margin-top: 20px;
+
   // Rest of the font-size adjustments in the tile class
   .tile .tile-inner {
     font-size: 35px;
@@ -544,6 +578,121 @@ hr {
 
     .lower {
       margin-top: 30px !important;
+    }
+  }
+
+  .sharing {
+    > iframe, > span, > form {
+      display: block;
+      margin: 0 auto;
+      margin-bottom: 20px;
+    }
+  }
+}
+
+// PP Donate button
+.pp-donate {
+  button {
+    @include appearance(none);
+    border: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    @include button;
+
+    img {
+      vertical-align: -4px;
+      margin-right: 8px;
+    }
+  }
+}
+
+// Bitcoin donate button
+.btc-donate {
+  // font-size: 14px;
+  position: relative;
+  margin-left: 10px;
+  @include button;
+  cursor: pointer;
+
+  img {
+    vertical-align: -4px;
+    margin-right: 8px;
+  }
+
+  a {
+    color: $bright-text-color;
+    text-decoration: none;
+    font-weight: normal;
+  }
+
+  .address {
+    // display: none;
+    cursor: auto;
+    position: absolute;
+    // background: red;
+    width: 340px;
+    right: 50%;
+    margin-right: -170px;
+
+    padding-bottom: 7px;
+
+    top: -30px;
+    opacity: 0;
+    pointer-events: none;
+    @include transition(400ms ease);
+    @include transition-property(top, opacity);
+
+    &:after {
+      position: absolute;
+      border-top: 10px solid $game-container-background;
+      border-right: 7px solid transparent;
+      border-left: 7px solid transparent;
+      content: "";
+      bottom: 0px;
+      left: 50%;
+      margin-left: -7px;
+    }
+
+    code {
+      background-color: $game-container-background;
+      padding: 10px 15px;
+      width: 100%;
+      border-radius: 3px;
+      line-height: 1;
+      font-weight: normal;
+      font-size: 15px;
+      font-family: Consolas, "Liberation Mono", Courier, monospace;
+      text-align: center;
+
+    }
+  }
+
+  &:hover, .address:hover {
+    .address {
+      opacity: 1;
+      top: -45px;
+      pointer-events: auto;
+    }
+  }
+
+  // Styles for small screens
+  @include smaller(480px) {
+    width: 120px;
+
+    .address {
+      margin-right: -150px;
+      // background: red;
+      width: 300px;
+
+      code {
+        font-size: 13px;
+      }
+
+      &:after {
+        left: 50%;
+        bottom: 2px;
+      }
     }
   }
 }

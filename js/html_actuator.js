@@ -2,9 +2,13 @@ function HTMLActuator() {
   this.tileContainer    = document.querySelector(".tile-container");
   this.scoreContainer   = document.querySelector(".score-container");
   this.bestContainer    = document.querySelector(".best-container");
+  this.nextTileContainer    = document.querySelector(".next-tile-container");
   this.messageContainer = document.querySelector(".game-message");
+  this.sharingContainer = document.querySelector(".score-sharing");
 
   this.score = 0;
+  this.next_background = {'2': '#eee4da', '4': '#ede0c8', '8': '#f2b179'};
+  this.next_color = {'2': '#776E65', '4': '#776E65', '8': '#f9f6f2'};
 }
 
 HTMLActuator.prototype.actuate = function (grid, metadata) {
@@ -21,6 +25,7 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
       });
     });
 
+    self.updateNextTile(metadata.tileValue);
     self.updateScore(metadata.score);
     self.updateBestScore(metadata.bestScore);
 
@@ -37,6 +42,10 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
 
 // Continues the game (both restart and keep playing)
 HTMLActuator.prototype.continueGame = function () {
+  if (typeof ga !== "undefined") {
+    ga("send", "event", "game", "restart");
+  }
+
   this.clearMessage();
 };
 
@@ -120,6 +129,13 @@ HTMLActuator.prototype.updateScore = function (score) {
   }
 };
 
+HTMLActuator.prototype.updateNextTile = function (nextTile) {
+    this.clearContainer(this.nextTileContainer);
+    this.nextTileContainer.textContent = nextTile;
+    this.nextTileContainer.style.background = this.next_background[nextTile];
+    this.nextTileContainer.style.color = this.next_color[nextTile];
+};
+
 HTMLActuator.prototype.updateBestScore = function (bestScore) {
   this.bestContainer.textContent = bestScore;
 };
@@ -128,8 +144,14 @@ HTMLActuator.prototype.message = function (won) {
   var type    = won ? "game-won" : "game-over";
   var message = won ? "You win!" : "Game over!";
 
+  if (typeof ga !== "undefined") {
+    ga("send", "event", "game", "end", type, this.score);
+  }
+
   this.messageContainer.classList.add(type);
   this.messageContainer.getElementsByTagName("p")[0].textContent = message;
+
+  this.clearContainer(this.sharingContainer);
 };
 
 HTMLActuator.prototype.clearMessage = function () {

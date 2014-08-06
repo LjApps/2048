@@ -65,12 +65,27 @@ GameManager.prototype.addStartTiles = function () {
   }
 };
 
+// Generates tile value
+GameManager.prototype.randomTile = function () {
+  var rand = Math.random();
+  return rand < 0.7 ? 2 : (rand < 0.9 ? 4 : 8);
+};
+
 // Adds a tile in a random position
 GameManager.prototype.addRandomTile = function () {
   if (this.grid.cellsAvailable()) {
-    var value = Math.random() < 0.9 ? 2 : 4;
-    var tile = new Tile(this.grid.randomAvailableCell(), value);
-
+    window.timeOut = 700;
+    if(window.trySlideDown) {
+      window.moveObj.move(2); clearTimeout(window.trySlideDown); window.trySlideDown = null;
+    }
+    if(window.moveObj) {
+      clearTimeout(window.autoFall);
+      window.autoFall = setTimeout(function(){window.moveObj.move(4);}, window.timeOut);
+    }
+    var tile = new Tile(this.grid.randomAvailableCell(), this.nextTile);
+    this.nextTile = this.randomTile();
+    this.grid.falling = tile;
+    this.grid.is_merged = false;
     this.grid.insertTile(tile);
   }
 };
@@ -90,6 +105,7 @@ GameManager.prototype.actuate = function () {
 
   this.actuator.actuate(this.grid, {
     score:      this.score,
+    tileValue:  this.nextTile,
     over:       this.over,
     won:        this.won,
     bestScore:  this.storageManager.getBestScore(),
@@ -128,7 +144,16 @@ GameManager.prototype.moveTile = function (tile, cell) {
 
 // Move tiles on the grid in the specified direction
 GameManager.prototype.move = function (direction) {
-  // 0: up, 1: right, 2: down, 3: left
+  // 0: up, 1: right, 2:down, 3: left, 4: one step fall
+  window.moveObj = this;
+
+  if(direction == 2 && window.trySlideDown) {
+    clearTimeout(window.trySlideDown); window.trySlideDown = null;
+  }
+
+  if(direction == 4)
+      window.autoFall = setTimeout(function(){window.moveObj.move(4);}, window.timeOut);
+
   var self = this;
 
   if (this.isGameTerminated()) return; // Don't do anything if the game's over
@@ -154,9 +179,10 @@ GameManager.prototype.move = function (direction) {
 
         // Only one merger per row traversal?
         if (next && next.value === tile.value && !next.mergedFrom) {
+          self.grid.is_merged = true;
           var merged = new Tile(positions.next, tile.value * 2);
           merged.mergedFrom = [tile, next];
-
+          self.grid.falling = merged;
           self.grid.insertTile(merged);
           self.grid.removeTile(tile);
 
@@ -179,13 +205,27 @@ GameManager.prototype.move = function (direction) {
     });
   });
 
+  //Keep on decreasing timeout after each
+  //movement of falling block.
+  window.timeOut = window.timeOut * window.FACTOR;
   if (moved) {
-    this.addRandomTile();
+    // if(vector.y == 1)
+    //   this.addRandomTile();
 
-    if (!this.movesAvailable()) {
+    // if (!this.movesAvailable()) {
+    //   this.over = true; // Game over!
+    // }
+   this.actuate();
+   if((direction == 1 || direction == 3 || direction == 2) && self.grid.is_merged) {
+     window.timeOut = window.timeOut / window.FACTOR;
+     clearTimeout(window.trySlideDown);
+     window.trySlideDown = setTimeout(function(){ window.moveObj.move(2); }, 200);
+   }
+  } else {
+    if((direction == 2 || direction == 4) && this.grid.falling.y == 0)
       this.over = true; // Game over!
-    }
-
+    if(direction == 4 && this.grid.falling.y != 0)
+      this.addRandomTile();    
     this.actuate();
   }
 };
@@ -198,6 +238,7 @@ GameManager.prototype.getVector = function (direction) {
     1: { x: 1,  y: 0 },  // Right
     2: { x: 0,  y: 1 },  // Down
     3: { x: -1, y: 0 }   // Left
+    4: { x: 0, y: 0}     //one step fall
   };
 
   return map[direction];
@@ -211,23 +252,38 @@ GameManager.prototype.buildTraversals = function (vector) {
     traversals.x.push(pos);
     traversals.y.push(pos);
   }
+    traversals.y.push(this.size);
 
   // Always traverse from the farthest cell in the chosen direction
   if (vector.x === 1) traversals.x = traversals.x.reverse();
   if (vector.y === 1) traversals.y = traversals.y.reverse();
 
+  // if(vector.y == 0) traversals.y = [0]
+  if(vector.y == 0) { // && vector.x == 0) {
+    traversals.x = [this.grid.falling.x]; 
+    traversals.y = [this.grid.falling.y];
+  }
   return traversals;
 };
 
 GameManager.prototype.findFarthestPosition = function (cell, vector) {
   var previous;
-
-  // Progress towards the vector direction until an obstacle is found
-  do {
-    previous = cell;
-    cell     = { x: previous.x + vector.x, y: previous.y + vector.y };
-  } while (this.grid.withinBounds(cell) &&
-           this.grid.cellAvailable(cell));
+  
+  if(vector.y == 0) {
+        if(vector.x == 0)vector.y = 1;
+        previous = cell; cell = { x: previous.x + vector.x, y: previous.y + vector.y };
+        if(this.grid.withinBounds(cell) && this.grid.cellAvailable(cell)) {
+        previous = cell; //cell = { x: previous.x + vector.x, y: previous.y + vector.y };          
+        if(vector.x == 0)vector.y = 0;
+        }
+  } else {
+    // Progress towards the vector direction until an obstacle is found
+    do {
+      previous = cell;
+      cell     = { x: previous.x + vector.x, y: previous.y + vector.y };
+    } while (this.grid.withinBounds(cell) &&
+             this.grid.cellAvailable(cell));
+  }
 
   return {
     farthest: previous,
@@ -246,7 +302,7 @@ GameManager.prototype.tileMatchesAvailable = function () {
   var tile;
 
   for (var x = 0; x < this.size; x++) {
-    for (var y = 0; y < this.size; y++) {
+    for (var y = 0+1; y < this.size+1; y++) {
       tile = this.grid.cellContent({ x: x, y: y });
 
       if (tile) {

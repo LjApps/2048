@@ -11,7 +11,6 @@ function KeyboardInputManager() {
     this.eventTouchmove     = "touchmove";
     this.eventTouchend      = "touchend";
   }
-
   this.listen();
 }
 
@@ -33,9 +32,10 @@ KeyboardInputManager.prototype.emit = function (event, data) {
 
 KeyboardInputManager.prototype.listen = function () {
   var self = this;
+  window.autoFall = setTimeout(function(){self.emit("move", 4);}, window.timeOut);
 
   var map = {
-    38: 0, // Up
+    // 38: 0, // Up
     39: 1, // Right
     40: 2, // Down
     37: 3, // Left
@@ -58,6 +58,10 @@ KeyboardInputManager.prototype.listen = function () {
     if (!modifiers) {
       if (mapped !== undefined) {
         event.preventDefault();
+        clearTimeout(window.autoFall);
+        var elem = document.getElementById("Pause");
+        if(elem.innerHTML != "||") elem.innerHTML = "||";
+        autoFall = setTimeout(function(){self.emit("move", 4);}, window.timeOut);
         self.emit("move", mapped);
       }
     }
@@ -66,7 +70,7 @@ KeyboardInputManager.prototype.listen = function () {
     if (!modifiers && event.which === 82) {
       self.restart.call(self, event);
     }
-  });
+  }
 
   // Respond to button presses
   this.bindButtonPress(".retry-button", this.restart);
@@ -122,7 +126,7 @@ KeyboardInputManager.prototype.listen = function () {
 
     if (Math.max(absDx, absDy) > 10) {
       // (right : left) : (down : up)
-      self.emit("move", absDx > absDy ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0));
+      self.emit("move", absDx > absDy ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 4));
     }
   });
 };
